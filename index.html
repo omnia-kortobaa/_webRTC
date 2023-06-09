@@ -9,8 +9,14 @@
   </head>
   <body>
     <section id="videos">
-      <video class="video-player" id="user-1" autoplay playsinline></video>
-      <video class="video-player" id="user-2" autoplay playsinline></video>
+      <div>
+        <video class="video-player" id="user-1" autoplay playsinline></video>
+      </div>
+      <div>
+        <video class="video-player" id="user-2" autoplay playsinline></video>
+        <div id="audioList"></div>
+      </div>
+      <button type="submit" onclick="saveChangeAudio()">Save</button>
     </section>
     <script src="./script.js"></script>
   </body>

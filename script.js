@@ -1,15 +1,43 @@
 const pc1 = new RTCPeerConnection();
 const pc2 = new RTCPeerConnection();
+let audioList = document.getElementById("audioList");
+let selectList = document.createElement("select");
+let userOne = document.getElementById("user-1");
+let userTwo = document.getElementById("user-2");
 let inputDeviceList;
 let audioDevicesList;
+let stream;
+let selectedInput;
+let newStream;
 pc1.onicecandidate = (e) => pc2.addIceCandidate(e.candidate);
 pc2.onicecandidate = (e) => pc1.addIceCandidate(e.candidate);
-const id2content = {};
+
+// to preview stream
 pc2.ontrack = (e) => {
-  document.getElementById("user-2").srcObject = e.streams[0];
+  userTwo.srcObject = e.streams[0];
 };
 
-let establishConnection = async (pc1, pc2) => {
+// open stream mainStream userOne and preview userTwo
+let openStream = async (stream) => {
+  if (stream) this.stream = stream;
+  if (!this.stream) {
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
+    getInputDevice();
+  }
+  userOne.srcObject = this.stream;
+
+  this.stream.getTracks().forEach((t) => {
+    pc1.addTrack(t, this.stream);
+  });
+  // to connect pc1 and pc2
+  startConnection(pc1, pc2);
+};
+
+// connect with webRTC
+let startConnection = async (pc1, pc2) => {
   await pc1.createOffer({}).then(function (offer) {
     pc1.setLocalDescription(offer);
     pc2.setRemoteDescription(offer);
@@ -20,38 +48,60 @@ let establishConnection = async (pc1, pc2) => {
   });
 };
 
-let open = async () => {
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: true,
-    audio: true,
-  });
-  document.getElementById("user-1").srcObject = stream;
-  stream.getTracks().forEach((t) => {
-    pc1.addTrack(t, stream);
-  });
-  
-  establishConnection(pc1, pc2);
-};
-
-function addElement() {
-  const newSelect = document.createElement("select");
-  const newOption = document.createElement("option");
-
-  newSelect.appendChild(newOption);
-
-  document.body.append(newSelect);
-}
-
 // get input device list to show them and change
 let getInputDevice = async () => {
-//   inputDeviceList = await navigator.mediaDevices.enumerateDevices();
-//   console.log(inputDeviceList);
-//   audioDevicesList = inputDeviceList.filter(
-//     (device) => device.kind == "audioinput"
-//   );
-//   console.log(navigator.mediaDevices.enumerateDevices()));
-
+  inputDeviceList = await navigator.mediaDevices.enumerateDevices();
+  audioDevicesList = inputDeviceList.filter(
+    (device) => device.kind == "audioinput"
+  );
+  addDevices();
 };
 
-open();
-getInputDevice()
+// create audio devices list
+let addDevices = async () => {
+  selectList.id = "mySelect";
+  audioList.appendChild(selectList);
+  document.getElementById("mySelect").addEventListener("change", (event) => {
+    selectedInput = event.target.value;
+    ChangeAudio();
+  });
+  audioDevicesList.forEach((device) => {
+    var option = document.createElement("option");
+    option.value = device.deviceId;
+    option.text = device.label;
+    selectList.appendChild(option);
+  });
+};
+
+// select new input audio from audio list and show in preview
+let ChangeAudio = async () => {
+  newStream = await navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: {
+      deviceId: selectedInput,
+    },
+  });
+  stopStream(userTwo.srcObject);
+  userTwo.srcObject = newStream;
+};
+
+// save preview stream to main stream and remove main stream and preview stream and open new
+let saveChangeAudio = async () => {
+  if (selectedInput) {
+    stopStream(this.stream);
+    openStream(newStream);
+    selectedInput = undefined;
+  }
+};
+
+// close stream before open new stream if exist
+let stopStream = (stream) => {
+  if (stream) {
+    for (let track of stream.getTracks()) {
+      track.stop();
+      console.log("stoooooooop");
+    }
+  }
+};
+
+openStream();
