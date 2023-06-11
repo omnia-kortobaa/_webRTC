@@ -9,8 +9,6 @@ let audioDevicesList;
 let stream;
 let selectedInput;
 let newStream;
-let audioDeviceId;
-let videoDeviceId;
 let audioStream;
 let videoStream;
 let sender;
@@ -26,31 +24,17 @@ pc2.ontrack = (e) => {
 let openStream = async () => {
   if (!videoStream) {
     videoStream = await navigator.mediaDevices.getUserMedia({
-      video: { deviceId: videoDeviceId ? { exact: videoDeviceId } : undefined },
+      video: true,
     });
   }
 
   if (!audioStream) {
     audioStream = await navigator.mediaDevices.getUserMedia({
-      audio: { deviceId: audioDeviceId ? { exact: audioDeviceId } : undefined },
+      audio: true,
     });
   }
 
   if (!audioDevicesList) getInputDevice();
-
-  audioDeviceId = audioStream.getAudioTracks()[0].getSettings().deviceId;
-  videoDeviceId = videoStream.getVideoTracks()[0].getSettings().deviceId;
-
-  document.getElementById(
-    "p1Input"
-  ).innerHTML = `<span> audio input device : ${audioDeviceId}
-  </span> <span> video input device : ${videoDeviceId}
-  </span>`;
-  document.getElementById(
-    "p2Input"
-  ).innerHTML = `<span> audio input device : ${audioDeviceId}
-  </span> <span> video input device : ${videoDeviceId}
-  </span>`;
 
   outputMediaStream = new webkitMediaStream([
     ...audioStream.getTracks(),
@@ -66,6 +50,7 @@ let openStream = async () => {
 
   // to connect pc1 and pc2
   startConnection(pc1, pc2);
+  console.log({audioStream,videoStream});
 };
 
 // connect with webRTC
@@ -95,7 +80,7 @@ let addDevices = async () => {
   audioList.appendChild(selectList);
   document.getElementById("mySelect").addEventListener("change", (event) => {
     selectedInput = event.target.value;
-    ChangeAudio();
+    changeAudio();
   });
   audioDevicesList.forEach((device) => {
     var option = document.createElement("option");
@@ -106,18 +91,12 @@ let addDevices = async () => {
 };
 
 // select new input audio from audio list and show in preview
-let ChangeAudio = async () => {
+let changeAudio = async () => {
   newStream = await navigator.mediaDevices.getUserMedia({
     audio: {
       deviceId: selectedInput,
     },
   });
-  audioDeviceId = newStream.getAudioTracks()[0].getSettings().deviceId;
-  document.getElementById(
-    "p2Input"
-  ).innerHTML = `<span> audio input device : ${audioDeviceId}
-  </span> <span> video input device : ${videoDeviceId}
-  </span>`;
 };
 
 // save preview stream to main stream and remove main stream and preview stream and open new
@@ -127,6 +106,7 @@ let saveChangeAudio = async () => {
     audioStream = newStream;
     openStream();
     selectedInput = undefined;
+    console.log({audioStream,videoStream});
   }
 };
 
