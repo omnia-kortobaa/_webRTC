@@ -9,29 +9,51 @@ let audioDevicesList;
 let stream;
 let selectedInput;
 let newStream;
+let audioDeviceId;
+let videoDeviceId;
+let audioStream;
+let videoStream;
 pc1.onicecandidate = (e) => pc2.addIceCandidate(e.candidate);
 pc2.onicecandidate = (e) => pc1.addIceCandidate(e.candidate);
 
 // to preview stream
 pc2.ontrack = (e) => {
+  // userTwo.srcObject = e.streams[0];
   userTwo.srcObject = e.streams[0];
 };
 
 // open stream mainStream userOne and preview userTwo
 let openStream = async (stream) => {
-  if (stream) this.stream = stream;
-  if (!this.stream) {
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true,
-    });
-    getInputDevice();
-  }
-  userOne.srcObject = this.stream;
-
+  // if (stream) this.stream = stream;
+  // if (!this.stream) {
+  this.stream = await navigator.mediaDevices.getUserMedia({
+    video: { deviceId: videoDeviceId ? { exact: videoDeviceId } : undefined },
+    audio: { deviceId: audioDeviceId ? { exact: audioDeviceId } : undefined },
+  });
+  getInputDevice();
+  audioStream = new MediaStream(this.stream.getAudioTracks());
+  videoStream = new MediaStream(this.stream.getVideoTracks());
   this.stream.getTracks().forEach((t) => {
     pc1.addTrack(t, this.stream);
   });
+  audioDeviceId = this.stream.getAudioTracks()[0].getSettings().deviceId;
+  videoDeviceId = this.stream.getVideoTracks()[0].getSettings().deviceId;
+  // }
+
+  document.getElementById(
+    "p1Input"
+  ).innerHTML = `<span> audio input device : ${audioDeviceId}
+  </span> <span> video input device : ${videoDeviceId}
+  </span>`;
+  document.getElementById(
+    "p2Input"
+  ).innerHTML = `<span> audio input device : ${audioDeviceId}
+  </span> <span> video input device : ${videoDeviceId}
+  </span>`;
+
+  // userOne.srcObject = this.stream;
+  userOne.srcObject = videoStream;
+
   // to connect pc1 and pc2
   startConnection(pc1, pc2);
 };
@@ -76,22 +98,35 @@ let addDevices = async () => {
 // select new input audio from audio list and show in preview
 let ChangeAudio = async () => {
   newStream = await navigator.mediaDevices.getUserMedia({
-    video: true,
+    // video: { deviceId: videoDeviceId ? { exact: videoDeviceId } : undefined },
     audio: {
       deviceId: selectedInput,
     },
   });
-  stopStream(userTwo.srcObject);
-  userTwo.srcObject = newStream;
+  audioDeviceId = newStream.getAudioTracks()[0].getSettings().deviceId;
+  document.getElementById(
+    "p2Input"
+  ).innerHTML = `<span> audio input device : ${audioDeviceId}
+  </span> <span> video input device : ${videoDeviceId}
+  </span>`;
+  // userTwo.srcObject = videoStream;
 };
 
 // save preview stream to main stream and remove main stream and preview stream and open new
 let saveChangeAudio = async () => {
   if (selectedInput) {
-    stopStream(this.stream);
-    openStream(newStream);
+    // stopStream(this.stream);
+    // openStream(newStream);
+    stopStream(audioStream);
+    audioStream = new MediaStream(newStream.getAudioTracks());
     selectedInput = undefined;
+    document.getElementById(
+      "p1Input"
+    ).innerHTML = `<span> audio input device : ${audioDeviceId}
+    </span> <span> video input device : ${videoDeviceId}
+    </span>`;
   }
+  console.log(audioDeviceId);
 };
 
 // close stream before open new stream if exist

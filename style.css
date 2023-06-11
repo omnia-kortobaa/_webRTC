@@ -21,3 +21,10 @@ video {
 button {
   margin: 2rem;
 }
+
+p{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
